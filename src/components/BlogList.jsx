@@ -6,16 +6,38 @@ import { fetchBlogs, deleteBlog } from '../redux/async/blogSlice';
 const BlogList = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { blogs = [], status, error, pagination = { currentPage: 1, totalPages: 1 }, } = useSelector((state) => state.blogs);
+  const { blogs = [], status, error, pagination = { currentPage: 1, totalPages: 1 } } = useSelector((state) => state.blogs);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
 
   // Fetch blogs saat pertama kali komponen dimuat atau ketika search query atau page berubah
   useEffect(() => {
     dispatch(fetchBlogs({ page: currentPage, limit: 5, search: searchQuery }));
   }, [dispatch, currentPage, searchQuery]);
+
+  // Fungsi untuk menangani input pencarian dengan debounce
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout); // Batalkan timeout sebelumnya
+    }
+
+    const timeout = setTimeout(() => {
+      setCurrentPage(1); // Reset ke halaman pertama setiap kali search berubah
+    }, 500); // Delay 500ms
+
+    setDebounceTimeout(timeout);
+  };
+
+  // Fungsi untuk memicu pencarian manual
+  const handleSearchSubmit = () => {
+    setCurrentPage(1);
+    dispatch(fetchBlogs({ page: 1, limit: 5, search: searchQuery }));
+  };
 
   // Fungsi untuk menghapus blog
   const handleDelete = async (id) => {
@@ -50,8 +72,13 @@ const BlogList = () => {
           </button>
         </div>
 
-        {/* Search Input */}
-        <input type='text' value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder='Search Blogs' className='w-full p-3 border rounded-lg mb-4' />
+        {/* Search Input and Button */}
+        <div className='mb-4 flex items-center gap-2'>
+          <input type='text' value={searchQuery} onChange={handleSearchChange} placeholder='Search Blogs' className='flex-grow p-3 border rounded-lg' />
+          <button onClick={handleSearchSubmit} className='bg-primary text-white py-2 px-4 rounded-lg font-bold shadow-md hover:bg-opacity-80 transition'>
+            Search
+          </button>
+        </div>
 
         {/* Status Loading */}
         {status === 'loading' && <p>Loading...</p>}
@@ -65,12 +92,12 @@ const BlogList = () => {
             blogs.map((blog) => (
               <div key={blog.id} className='p-4 bg-gray-100 rounded-lg shadow'>
                 <h3 className='text-lg font-semibold'>{blog.title}</h3>
-                <p className='text-sm text-gray-600'>{blog.meta_desc}</p>
+                <p className='text-sm text-gray-600' dangerouslySetInnerHTML={{ __html: blog.meta_desc }} />
                 <div className='mt-2 flex space-x-4'>
                   <button onClick={() => navigate(`/blogs/${blog.id}`)} className='text-primary font-bold'>
                     View
                   </button>
-                  <button onClick={() => navigate(`/blogs/${blog.id}/`)} className='text-blue-500 font-bold'>
+                  <button onClick={() => navigate(`/blogs/edit/${blog.id}`)} className='text-blue-500 font-bold'>
                     Edit
                   </button>
                   <button onClick={() => handleDelete(blog.id)} className='text-red-500 font-bold'>

@@ -6,6 +6,7 @@ import userSlice from './async/userSlice';
 import { persistStore, persistReducer } from 'redux-persist';
 import blogReducer from './async/blogSlice';
 import testimonialSlice from './async/testimonialSlice';
+import dashboardSlice from './async/dashboardSlice';
 import portfolioSlice from './async/portfolioSlice';
 import contactSlice from './async/contactSlice';
 import storage from 'redux-persist/lib/storage';
@@ -33,6 +34,7 @@ const rootReducer = combineReducers({
   blogs: blogReducer,
   portfolio: portfolioSlice,
   contact: contactSlice,
+  dashboard : dashboardSlice,
   testimonial : testimonialSlice,
 });
 

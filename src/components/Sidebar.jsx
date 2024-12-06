@@ -1,39 +1,46 @@
-// Sidebar Component
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { fetchUsers } from '../redux/async/userSlice';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-const Sidebar = ({ className }) => {
+
+const Sidebar = ({ className, closeSidebar }) => {
   return (
-    <aside className={`${className} bg-dark text-light w-full md:w-64 h-full p-6 shadow-lg md:h-screen flex-none transition duration-300 ease-in-out`}>
-      <div className='mb-8'>
-        <h2 className='text-3xl font-bold'>DASHBOARD</h2>
+    <aside
+      className={`${className} bg-dark text-light w-64 h-full fixed top-0 left-0 z-50 shadow-lg md:relative md:z-auto transition-transform duration-300 ease-in-out`}
+      onClick={(e) => e.stopPropagation()} // Prevent click propagation
+    >
+      <div className="p-6">
+        <h2 className="text-3xl font-bold">DASHBOARD</h2>
       </div>
-      <ul className='space-y-6 text-lg'>
-        <Link to={'/'} className='hover:bg-primary hover:text-white px-4 py-2 rounded cursor-pointer transition flex items-center space-x-3'>
-          <span className='iconify' data-icon='mdi:view-dashboard'></span>
-          <span>Dashboard</span>
-        </Link>
-        <Link to={'/users'} className='hover:bg-primary hover:text-white px-4 py-2 rounded cursor-pointer transition flex items-center space-x-3'>
-          <span className='iconify' data-icon='mdi:account-multiple'></span>
-          <span>Users</span>
-        </Link>
-        <Link to={'/portfolio'} className='hover:bg-primary hover:text-white px-4 py-2 rounded cursor-pointer transition flex items-center space-x-3'>
-          <span className='iconify' data-icon='mdi:account-plus'></span>
-          <span>Portfolio</span>
-        </Link>
-        <Link to={'/blogs'} className='hover:bg-primary hover:text-white px-4 py-2 rounded cursor-pointer transition flex items-center space-x-3'>
-          <span className='iconify' data-icon='mdi:chart-line'></span>
-          <span>blogs</span>
-        </Link>
-        <Link to={'/testimonial'} className='hover:bg-primary hover:text-white px-4 py-2 rounded cursor-pointer transition flex items-center space-x-3'>
-          <span className='iconify' data-icon='mdi:cog'></span>
-          <span>Testimonial</span>
-        </Link>
-        <Link to={'/contact'} className='hover:bg-primary hover:text-white px-4 py-2 rounded cursor-pointer transition flex items-center space-x-3'>
-          <span className='iconify' data-icon='mdi:cog'></span>
-          <span>Contact</span>
-        </Link>
+      <ul className="space-y-6 text-lg px-6">
+        <li>
+          <Link to="/" className="block hover:bg-primary hover:text-white px-4 py-2 rounded transition">
+            Dashboard
+          </Link>
+        </li>
+        <li>
+          <Link to="/users" className="block hover:bg-primary hover:text-white px-4 py-2 rounded transition">
+            Users
+          </Link>
+        </li>
+        <li>
+          <Link to="/portfolio" className="block hover:bg-primary hover:text-white px-4 py-2 rounded transition">
+            Portfolio
+          </Link>
+        </li>
+        <li>
+          <Link to="/blogs" className="block hover:bg-primary hover:text-white px-4 py-2 rounded transition">
+            Blogs
+          </Link>
+        </li>
+        <li>
+          <Link to="/testimonial" className="block hover:bg-primary hover:text-white px-4 py-2 rounded transition">
+            Testimonial
+          </Link>
+        </li>
+        <li>
+          <Link to="/contact" className="block hover:bg-primary hover:text-white px-4 py-2 rounded transition">
+            Contact
+          </Link>
+        </li>
       </ul>
     </aside>
   );
@@ -41,6 +48,7 @@ const Sidebar = ({ className }) => {
 
 Sidebar.propTypes = {
   className: PropTypes.string,
+  closeSidebar: PropTypes.func,
 };
 
 export default Sidebar;

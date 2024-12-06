@@ -20,6 +20,7 @@ const BlogEditor = () => {
     banner: null,
   });
 
+  const [previewImage, setPreviewImage] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
   // Fetch blog details jika ada ID (edit mode)
@@ -33,7 +34,6 @@ const BlogEditor = () => {
   // Sinkronisasi `blogDetails` ke state lokal
   useEffect(() => {
     if (isEditMode && status === 'succeeded' && blogDetails && blogDetails.id === parseInt(id)) {
-      console.log('Fetched blog details:', blogDetails); // Debugging log
       setBlogData({
         title: blogDetails.title || '',
         content: blogDetails.content || '',
@@ -42,31 +42,28 @@ const BlogEditor = () => {
         published: blogDetails.published || false,
         banner: null, // Banner tidak dapat langsung disinkronkan
       });
+      setPreviewImage(blogDetails.banner); // Preview gambar dari data yang diterima
     }
   }, [isEditMode, blogDetails, id, status]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setBlogData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    const { name, value, type, checked, files } = e.target;
+    if (name === 'banner' && files.length > 0) {
+      const file = files[0];
+      setPreviewImage(URL.createObjectURL(file)); // Preview gambar yang dipilih
+      setBlogData((prev) => ({ ...prev, banner: file }));
+    } else {
+      setBlogData((prev) => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      }));
+    }
   };
-
-  console.log(blogDetails);
-  
 
   const handleContentChange = (data) => {
     setBlogData((prev) => ({
       ...prev,
       content: data,
-    }));
-  };
-
-  const handleFileChange = (e) => {
-    setBlogData((prev) => ({
-      ...prev,
-      banner: e.target.files[0],
     }));
   };
 
@@ -79,9 +76,9 @@ const BlogEditor = () => {
     });
 
     if (isEditMode) {
-      dispatch(updateBlog({ id, blogData: formData }));
+      await dispatch(updateBlog({ id, blogData: formData }));
     } else {
-      dispatch(createBlog(formData));
+      await dispatch(createBlog(formData));
     }
     navigate('/blogs');
   };
@@ -94,51 +91,49 @@ const BlogEditor = () => {
     <div className='p-6 bg-gray-50 min-h-screen'>
       <div className='bg-white shadow rounded-lg p-6 max-w-4xl mx-auto'>
         <h2 className='text-2xl font-bold mb-4'>{isEditMode ? 'Edit Blog' : 'Create New Blog'}</h2>
-        <div className='mb-4'>
-          <label className='block text-gray-700 font-semibold mb-2'>Title</label>
-          <input type='text' name='title' value={blogData.title} onChange={handleChange} className='w-full p-3 border rounded-lg focus:outline-primary focus:ring-2 focus:ring-primary transition' />
-        </div>
-        <div className='mb-4'>
-          <label className='block text-gray-700 font-semibold mb-2'>Content</label>
-          <CKEditor
-            editor={ClassicEditor}
-            data={blogData.content}
-            onChange={(event, editor) => {
-              const data = editor.getData();
-              handleContentChange(data);
-            }}
-            config={{
-              licenseKey : 'GPL',
-              toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'undo', 'redo'],
-            }}
-          />
-        </div>
-        <div className='mb-4'>
-          <label className='block text-gray-700 font-semibold mb-2'>Meta Title</label>
-          <input type='text' name='meta_title' value={blogData.meta_title} onChange={handleChange} className='w-full p-3 border rounded-lg' />
-        </div>
-        <div className='mb-4'>
-          <label className='block text-gray-700 font-semibold mb-2'>Meta Description</label>
-          <textarea name='meta_desc' value={blogData.meta_desc} onChange={handleChange} className='w-full p-3 border rounded-lg' />
-        </div>
-        <div className='mb-4'>
-          <label className='flex items-center space-x-3'>
+        <form onSubmit={(e) => e.preventDefault()} className='space-y-4'>
+          <div>
+            <label className='block text-gray-700 font-semibold mb-2'>Title</label>
+            <input type='text' name='title' value={blogData.title} onChange={handleChange} className='w-full p-3 border rounded-lg focus:outline-primary focus:ring-2 focus:ring-primary transition' />
+          </div>
+          <div>
+            <label className='block text-gray-700 font-semibold mb-2'>Content</label>
+            <CKEditor
+              editor={ClassicEditor}
+              data={blogData.content}
+              onChange={(event, editor) => handleContentChange(editor.getData())}
+              config={{
+                licenseKey:'GPL',
+                toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|', 'undo', 'redo'],
+              }}
+            />
+          </div>
+          <div>
+            <label className='block text-gray-700 font-semibold mb-2'>Meta Title</label>
+            <input type='text' name='meta_title' value={blogData.meta_title} onChange={handleChange} className='w-full p-3 border rounded-lg' />
+          </div>
+          <div>
+            <label className='block text-gray-700 font-semibold mb-2'>Meta Description</label>
+            <textarea name='meta_desc' value={blogData.meta_desc} onChange={handleChange} className='w-full p-3 border rounded-lg' rows='3' />
+          </div>
+          <div>
+            <label className='block text-gray-700 font-semibold mb-2'>Published</label>
             <input type='checkbox' name='published' checked={blogData.published} onChange={handleChange} className='form-checkbox h-5 w-5 text-primary' />
-            <span className='text-gray-700 font-semibold'>Published</span>
-          </label>
-        </div>
-        <div className='mb-6'>
-          <label className='block text-gray-700 font-semibold mb-2'>Banner</label>
-          <input type='file' name='banner' onChange={handleFileChange} className='block w-full text-gray-500' />
-        </div>
-        <div className='flex justify-end space-x-4'>
-          <button onClick={() => navigate('/blogs')} className='bg-gray-300 text-gray-700 py-2 px-4 rounded-lg shadow-md'>
-            Cancel
-          </button>
-          <button onClick={handleSave} className='bg-primary text-white py-2 px-4 rounded-lg shadow-md'>
-            Save
-          </button>
-        </div>
+          </div>
+          <div>
+            <label className='block text-gray-700 font-semibold mb-2'>Banner</label>
+            <input type='file' name='banner' onChange={handleChange} className='block w-full' />
+            {previewImage && <img src={previewImage} alt='Preview' className='mt-4 max-w-full rounded-lg' />}
+          </div>
+          <div className='flex justify-end space-x-4'>
+            <button onClick={() => navigate('/blogs')} className='bg-gray-300 text-gray-700 py-2 px-4 rounded-lg'>
+              Cancel
+            </button>
+            <button onClick={handleSave} className='bg-primary text-white py-2 px-4 rounded-lg'>
+              Save
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

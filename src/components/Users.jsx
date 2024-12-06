@@ -1,69 +1,58 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchUsers, deleteUser } from '../redux/async/userSlice';
+import { fetchUsers, deleteUser, fetchUserDetails } from '../redux/async/userSlice';
 import { showConfirmationAlert, showSuccessAlert, showErrorAlert } from '../utils/SweetAlert';
 
 const Users = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { users, status, error } = useSelector((state) => state.users);
+  const { users = [], status, error, pagination = { currentPage: 1, totalPages: 1 } } = useSelector((state) => state.users);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const limit = 10; // Fixed limit per page
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
 
   useEffect(() => {
-    dispatch(fetchUsers({ search: searchQuery, page, limit }));
-  }, [dispatch, searchQuery, page, limit]);
+    dispatch(fetchUsers({ search: searchQuery, page: currentPage, limit }));
+  }, [dispatch, searchQuery, currentPage, limit]);
 
   const handleSearch = () => {
-    setPage(1); // Reset to the first page when searching
+    setCurrentPage(1); // Reset ke halaman pertama
     dispatch(fetchUsers({ search: searchQuery, page: 1, limit }));
   };
 
   const handleDelete = async (id) => {
     const confirmation = await showConfirmationAlert('Are you sure?', 'This action cannot be undone.');
-
     if (confirmation.isConfirmed) {
       try {
         await dispatch(deleteUser(id)).unwrap();
         showSuccessAlert('Deleted!', 'The user has been successfully deleted.');
+        dispatch(fetchUsers({ search: searchQuery, page: currentPage, limit })); // Refresh data
       } catch (error) {
         showErrorAlert('Error!', error.message);
       }
     }
   };
 
-  const handleViewProfile = (id) => {
-    navigate(`/users/${id}`); // Navigate to profile with user ID
+  const handleEdit = (id) => {
+    navigate(`/users/edit/${id}`); // Navigasi ke CreateUser dengan ID user
+    dispatch(fetchUserDetails(id));
   };
 
   const handleNextPage = () => {
-    setPage((prevPage) => prevPage + 1);
+    setCurrentPage((prev) => prev + 1);
   };
 
   const handlePreviousPage = () => {
-    setPage((prevPage) => (prevPage > 1 ? prevPage - 1 : 1));
+    setCurrentPage((prev) => (prev > 1 ? prev - 1 : 1));
   };
-
-  if (status === 'loading') {
-    return <p>Loading users...</p>;
-  }
-
-  if (error) {
-    return <p>Error: {error}</p>;
-  }
 
   return (
     <div className='p-6 bg-white rounded-lg shadow-md'>
       <div className='flex justify-between items-center mb-6'>
         <h2 className='text-2xl font-bold'>Users List</h2>
-
-        <button
-          onClick={() => navigate('/create-user')}
-          className='bg-primary text-white py-2 px-4 rounded-lg font-bold shadow-md hover:bg-opacity-80 transition'
-        >
+        <button onClick={() => navigate('/users/add')} className='bg-primary text-white py-2 px-4 rounded-lg font-bold shadow-md hover:bg-opacity-80 transition'>
           Add User
         </button>
       </div>
@@ -76,13 +65,13 @@ const Users = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className='w-full p-3 border rounded-lg focus:outline-primary focus:ring-2 focus:ring-primary transition'
         />
-        <button
-          onClick={handleSearch}
-          className='bg-primary text-white py-2 px-4 rounded-lg font-bold shadow-md hover:bg-opacity-80 transition'
-        >
+        <button onClick={handleSearch} className='bg-primary text-white py-2 px-4 rounded-lg font-bold shadow-md hover:bg-opacity-80 transition'>
           Search
         </button>
       </div>
+
+      {status === 'loading' && <p>Loading users...</p>}
+      {error && <p>Error: {error}</p>}
 
       <div className='overflow-x-auto'>
         <table className='w-full text-left border-collapse'>
@@ -90,7 +79,7 @@ const Users = () => {
             <tr>
               <th className='p-3 font-bold text-gray-600 uppercase border-b'>Author</th>
               <th className='p-3 font-bold text-gray-600 uppercase border-b'>Title</th>
-              <th className='p-3 font-bold text-gray-600 uppercase border-b'>View Profile</th>
+              <th className='p-3 font-bold text-gray-600 uppercase border-b'>Edit</th>
               <th className='p-3 font-bold text-gray-600 uppercase border-b'>Delete</th>
             </tr>
           </thead>
@@ -98,30 +87,20 @@ const Users = () => {
             {users.map((user) => (
               <tr key={user.id} className='border-b hover:bg-gray-50'>
                 <td className='p-3 flex items-center space-x-3'>
-                  <img
-                    src={user.photo || 'https://via.placeholder.com/40'}
-                    alt={user.name}
-                    className='w-10 h-10 rounded-full object-cover'
-                  />
+                  <img src={user.photo || 'https://via.placeholder.com/40'} alt={user.name} className='w-10 h-10 rounded-full object-cover' />
                   <div>
                     <p className='font-bold'>{user.name}</p>
                     <p className='text-sm text-gray-600'>{user.email}</p>
                   </div>
                 </td>
-
                 <td className='p-3'>
                   <p className='font-semibold'>{user.title}</p>
                 </td>
-
                 <td className='p-3'>
-                  <button
-                    onClick={() => handleViewProfile(user.id)}
-                    className='text-primary font-bold underline hover:no-underline'
-                  >
-                    View Profile
+                  <button onClick={() => handleEdit(user.id)} className='text-blue-500 font-bold underline hover:no-underline'>
+                    Edit
                   </button>
                 </td>
-
                 <td className='p-3 text-red-500 font-bold cursor-pointer'>
                   <button onClick={() => handleDelete(user.id)}>Delete</button>
                 </td>
@@ -131,22 +110,12 @@ const Users = () => {
         </table>
       </div>
 
-      {/* Pagination Controls */}
       <div className='flex justify-between items-center mt-6'>
-        <button
-          onClick={handlePreviousPage}
-          disabled={page === 1}
-          className='py-2 px-4 bg-gray-200 text-gray-600 rounded-lg font-bold shadow-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition'
-        >
+        <button onClick={handlePreviousPage} disabled={currentPage === 1} className='py-2 px-4 bg-gray-200 text-gray-600 rounded-lg font-bold shadow-md hover:bg-gray-300 disabled:opacity-50 transition'>
           Previous
         </button>
-
-        <span className='font-bold'>Page {page}</span>
-
-        <button
-          onClick={handleNextPage}
-          className='py-2 px-4 bg-gray-200 text-gray-600 rounded-lg font-bold shadow-md hover:bg-gray-300 transition'
-        >
+        <span className='font-bold'>Page {currentPage}</span>
+        <button onClick={handleNextPage} className='py-2 px-4 bg-gray-200 text-gray-600 rounded-lg font-bold shadow-md hover:bg-gray-300 transition'>
           Next
         </button>
       </div>

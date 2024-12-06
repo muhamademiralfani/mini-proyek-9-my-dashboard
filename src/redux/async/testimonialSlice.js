@@ -20,7 +20,7 @@ export const fetchTestimonials = createAsyncThunk('testimonial/fetchTestimonials
     });
     return response.data.data; // Sesuaikan dengan struktur respons API
   } catch (error) {
-    return rejectWithValue(error.response?.data || 'Failed to fetch testimonials');
+    return rejectWithValue(error.response?.data || 'Failed to fetch testimonial');
   }
 });
 
@@ -39,7 +39,7 @@ export const fetchTestimonialDetails = createAsyncThunk('testimonial/fetchTestim
 });
 
 // Create a new testimonial
-export const createTestimonial = createAsyncThunk('testimonial/createTestimonial', async (testimonialData, { rejectWithValue }) => {
+export const createTestimonial = createAsyncThunk('testimonial/createTestimonials', async (testimonialData, { rejectWithValue }) => {
   try {
     const response = await axios.post(`${API_URL}/testimonial`, testimonialData, {
       headers: {
@@ -49,15 +49,12 @@ export const createTestimonial = createAsyncThunk('testimonial/createTestimonial
     });
     return response.data;
   } catch (error) {
-    return rejectWithValue(error.response?.data || 'Failed to create testimonial');
+    return rejectWithValue(error.response?.data || 'Failed to create testimonials');
   }
 });
 
 // Update an existing testimonial
-export const updateTestimonial = createAsyncThunk('testimonial/updateTestimonial', async ({ id, testimonialData }, { rejectWithValue }) => {
-  console.log('ID:', id);
-  console.log('Data being sent:', [...testimonialData.entries()]);
-
+export const updateTestimonial = createAsyncThunk('testimonial/updateTestimonials', async ({ id, testimonialData }, { rejectWithValue }) => {
   try {
     const response = await axios.put(`${API_URL}/testimonial/${id}`, testimonialData, {
       headers: {
@@ -67,13 +64,12 @@ export const updateTestimonial = createAsyncThunk('testimonial/updateTestimonial
     });
     return response.data;
   } catch (error) {
-    console.error('Update Error:', error.response?.data);
-    return rejectWithValue(error.response?.data || 'Failed to update testimonial');
+    return rejectWithValue(error.response?.data || 'Failed to update testimonials');
   }
 });
 
 // Delete a testimonial
-export const deleteTestimonial = createAsyncThunk('testimonial/deleteTestimonial', async (id, { rejectWithValue }) => {
+export const deleteTestimonial = createAsyncThunk('testimonial/deleteTestimonials', async (id, { rejectWithValue }) => {
   try {
     await axios.delete(`${API_URL}/testimonial/${id}`, {
       headers: {
@@ -109,16 +105,13 @@ const testimonialSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload;
       })
-
       .addCase(fetchTestimonialDetails.fulfilled, (state, action) => {
         state.testimonialDetails = action.payload;
       })
-
       .addCase(createTestimonial.fulfilled, (state, action) => {
         state.testimonials.push(action.payload);
       })
       .addCase(updateTestimonial.fulfilled, (state, action) => {
-        state.error = null;
         state.testimonials = state.testimonials.map((t) => (t.id === action.payload.id ? action.payload : t));
       })
       .addCase(deleteTestimonial.fulfilled, (state, action) => {
